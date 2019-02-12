@@ -27,6 +27,11 @@ export namespace VscodeCommands {
         label: 'VSCode open link'
     };
 
+    export const DIFF: Command = {
+       id: 'vscode.diff',
+       label: 'VSCode diff'
+    };
+
     export const SET_CONTEXT: Command = {
         id: 'setContext'
     };
@@ -44,6 +49,14 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             isVisible: () => false,
             execute: (resource: URI) => {
                 this.commandService.executeCommand('theia.open', new TheiaURI(resource));
+            }
+        });
+
+        commands.registerCommand(VscodeCommands.DIFF, {
+            isVisible: () => true,
+            // tslint:disable-next-line: no-any
+            execute: (args: [URI, URI, string]) => {
+                this.commandService.executeCommand('theia.diff', args);
             }
         });
 
