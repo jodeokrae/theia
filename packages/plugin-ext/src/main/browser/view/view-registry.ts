@@ -14,11 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { ViewContainer, View } from '../../../common';
 import { ApplicationShell } from '@theia/core/lib/browser';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
-import { Widget } from '@theia/core/lib/browser/widgets/widget';
 import { ViewsContainerWidget } from './views-container-widget';
 import { TreeViewWidget } from './tree-views-main';
 
@@ -37,85 +36,42 @@ export class ViewRegistry {
     @inject(FrontendApplicationStateService)
     protected applicationStateService: FrontendApplicationStateService;
 
-    private containers: ViewContainerRegistry[] = new Array();
+    private containersWidgets = new Map<string, ViewsContainerWidget>();
+    private treeViewWidgets = new Map<string, TreeViewWidget>();
 
-    private containersWidgets: Map<string, ViewsContainerWidget> = new Map<string, ViewsContainerWidget>();
-
-    private treeViewWidgets: Map<string, TreeViewWidget> = new Map<string, TreeViewWidget>();
-
-    @postConstruct()
-    init() {
-        this.applicationStateService.reachedState('ready').then(() => {
-            this.showContainers();
-            this.showTreeViewWidgets();
-        });
-    }
-
-    getArea(location: string): ApplicationShell.Area {
-        switch (location) {
-            case 'right': return 'right';
-            case 'bottom': return 'bottom';
-            case 'top': return 'top';
-        }
-
-        return 'left';
-    }
-
-    registerViewContainer(location: string, viewContainer: ViewContainer) {
+    registerViewContainer(location: string, viewContainer: ViewContainer): void {
         const registry: ViewContainerRegistry = {
             container: viewContainer,
-            area: this.getArea(location),
+            area: !ApplicationShell.isSideArea(location) ? 'left' : location,
             views: []
         };
-        this.containers.push(registry);
+        const widget = new ViewsContainerWidget(registry.container);
+        if (!this.applicationShell.getTabBarFor(widget)) {
+            this.applicationShell.addWidget(widget, {area: registry.area});
+        }
+        this.containersWidgets.set(registry.container.id, widget);
     }
 
-    registerView(location: string, view: View) {
-        this.containers.forEach(containerRegistry => {
-            if (location === containerRegistry.container.id) {
-                containerRegistry.views.push(view);
+    registerView(location: string, view: View): void {
+        const widget = this.containersWidgets.get(location);
+        if (!widget) {
+            return;
+        }
+        widget.addView(view);
+        const treeViewWidget = this.treeViewWidgets.get(view.id);
+        if (treeViewWidget) {
+            if (widget.hasView(view.id) && widget.addWidget(view.id, treeViewWidget)) {
+                this.applicationShell.activateWidget(widget.id);
             }
-        });
-    }
-
-    private showContainers() {
-        // Remember the currently active widget
-        const activeWidget: Widget | undefined = this.applicationShell.activeWidget;
-
-        // Show views containers
-        this.containers.forEach(registry => {
-            const widget = new ViewsContainerWidget(registry.container, registry.views);
-            this.containersWidgets.set(registry.container.id, widget);
-
-            const tabBar = this.applicationShell.getTabBarFor(widget);
-            if (!tabBar) {
-                const widgetArgs: ApplicationShell.WidgetOptions = {
-                    area: registry.area
-                };
-
-                this.applicationShell.addWidget(widget, widgetArgs);
-            }
-        });
-
-        // Restore active widget
-        if (activeWidget) {
-            this.applicationShell.activateWidget(activeWidget.id);
         }
     }
 
-    onRegisterTreeView(treeViewid: string, treeViewWidget: TreeViewWidget) {
-        this.treeViewWidgets.set(treeViewid, treeViewWidget);
-    }
-
-    showTreeViewWidgets(): void {
-        this.treeViewWidgets.forEach((treeViewWidget, treeViewId) => {
-            this.containersWidgets.forEach((viewsContainerWidget, viewsContainerId) => {
-                if (viewsContainerWidget.hasView(treeViewId)) {
-                    viewsContainerWidget.addWidget(treeViewId, treeViewWidget);
-                    this.applicationShell.activateWidget(viewsContainerWidget.id);
-                }
-            });
+    onRegisterTreeView(viewId: string, treeViewWidget: TreeViewWidget): void {
+        this.treeViewWidgets.set(viewId, treeViewWidget);
+        this.containersWidgets.forEach((containerWidget: ViewsContainerWidget) => {
+            if (containerWidget.hasView(viewId) && containerWidget.addWidget(viewId, treeViewWidget)) {
+                this.applicationShell.activateWidget(containerWidget.id);
+            }
         });
     }
-
 }
