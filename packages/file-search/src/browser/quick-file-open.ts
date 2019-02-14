@@ -93,6 +93,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
             placeholder,
             fuzzyMatchLabel: true,
             fuzzyMatchDescription: true,
+            fuzzySort: true,
             showItemsWithoutHighlight: true,
             onClose: () => {
                 this.isOpen = false;
