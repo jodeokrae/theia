@@ -24,7 +24,7 @@ import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
 import { HostedPluginLogViewer } from '../../hosted/browser/hosted-plugin-log-viewer';
 import { HostedPluginManagerClient } from '../../hosted/browser/hosted-plugin-manager-client';
-import { DiffCommandHandler, OpenUriCommandHandler } from './commands';
+import { OpenUriCommandHandler } from './commands';
 import { PluginApiFrontendContribution } from './plugin-frontend-contribution';
 import { HostedPluginServer, hostedServicePath, PluginServer, pluginServerJsonRpcPath } from '../../common/plugin-protocol';
 import { ModalNotification } from './dialogs/modal-notification';
@@ -72,7 +72,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplicationContribution).to(HostedPluginController).inSingletonScope();
 
     bind(OpenUriCommandHandler).toSelf().inSingletonScope();
-    bind(DiffCommandHandler).toSelf().inSingletonScope();
     bind(PluginApiFrontendContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(PluginApiFrontendContribution);
 

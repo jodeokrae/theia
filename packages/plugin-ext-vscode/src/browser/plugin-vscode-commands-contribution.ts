@@ -20,6 +20,7 @@ import { CommandService } from '@theia/core/lib/common/command';
 import TheiaURI from '@theia/core/lib/common/uri';
 import URI from 'vscode-uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { DiffService } from '@theia/workspace/lib/browser/diff-service';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -43,6 +44,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly commandService: CommandService;
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+    @inject(DiffService)
+    protected readonly diffService: DiffService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -55,8 +58,9 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand(VscodeCommands.DIFF, {
             isVisible: () => true,
             // tslint:disable-next-line: no-any
-            execute: (args: [URI, URI, string]) => {
-                this.commandService.executeCommand('theia.diff', args);
+            execute: async uris => {
+                const [left, right] = uris;
+                await this.diffService.openDiffEditor(left, right);
             }
         });
 

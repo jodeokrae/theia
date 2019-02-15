@@ -19,8 +19,6 @@ import URI from '@theia/core/lib/common/uri';
 import { Command, CommandService } from '@theia/core/lib/common/command';
 import { AbstractDialog } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
-import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 
 @injectable()
 export class OpenUriCommandHandler {
@@ -100,24 +98,5 @@ class OpenNewTabDialog extends AbstractDialog<string> {
 
         // show dialog window to user
         this.open();
-    }
-}
-
-@injectable()
-export class DiffCommandHandler {
-
-    public static readonly COMMAND_METADATA: Command = {
-        id: 'theia.diff'
-    };
-
-    constructor(
-        @inject(OpenerService)
-        protected readonly openerService: OpenerService
-    ) {
-    }
-
-    public execute(left: URI, right: URI, label: string): void {
-        const diffUri = DiffUris.encode(left, right, label);
-        open(this.openerService, diffUri);
     }
 }
